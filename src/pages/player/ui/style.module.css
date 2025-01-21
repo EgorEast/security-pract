@@ -1,7 +1,10 @@
 .component {
+  box-sizing: border-box;
+
   background-color: white;
   width: 25%;
   max-width: 600px;
+  min-width: 311px;
   margin: 1em auto;
   padding: 2em;
   border: 0.1px solid black;
@@ -59,6 +62,22 @@
   background-color: #27ae60;
 }
 
+.volume {
+  position: absolute;
+  top: 50%;
+  right: -40px;
+  height: 80%;
+
+  transform: translateY(-50%);
+}
+
 input[type='range'] {
   background-color: #27ae60;
+}
+input[type='range'][data-orient='vertical'] {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  appearance: slider-vertical;
+  width: 16px;
+  vertical-align: bottom;
 }

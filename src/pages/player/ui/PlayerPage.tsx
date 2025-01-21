@@ -5,8 +5,9 @@ import cover from './cover.jpeg'
 import { AiFillPlayCircle, AiFillPauseCircle } from 'react-icons/ai' // иконки для воспроизведения и паузы
 import { BiSkipNext, BiSkipPrevious } from 'react-icons/bi' // иконки для следующего и предыдущего трека
 import { IconContext } from 'react-icons' // для кастомизации иконок
-
 import style from './style.module.css'
+
+const DEFAULT_VALUE = 50
 
 export const PlayerPage = () => {
   const [isPlaying, setIsPlaying] = useState(false)
@@ -18,9 +19,11 @@ export const PlayerPage = () => {
     sec: null,
   }) // текущее положение звука в минутах и секундах
 
-  const [seconds, setSeconds] = useState() // текущая позиция звука в секундах
+  const [seconds, setSeconds] = useState(0) // текущая позиция звука в секундах
 
-  const [play, { pause, duration, sound }] = useSound(youAreBeautiful)
+  const [play, { pause, duration, sound, stop }] = useSound(youAreBeautiful, {
+    volume: DEFAULT_VALUE / 100,
+  })
 
   const time = useMemo(() => {
     if (!duration)
@@ -52,9 +55,15 @@ export const PlayerPage = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       if (sound) {
-        setSeconds(sound.seek([])) // устанавливаем состояние с текущим значением в секундах
-        const min = Math.floor(sound.seek([]) / 60)
-        const sec = Math.floor(sound.seek([]) % 60)
+        setSeconds(sound.seek()) // устанавливаем состояние с текущим значением в секундах
+        const min = Math.floor(sound.seek() / 60)
+        const sec = Math.floor(sound.seek() % 60)
+
+        if (time.min !== null && time.sec !== null && min >= time.min && sec - 1 >= time.sec) {
+          setIsPlaying(false)
+          stop()
+        }
+
         setCurrTime({
           min,
           sec,
@@ -62,40 +71,58 @@ export const PlayerPage = () => {
       }
     }, 1000)
     return () => clearInterval(interval)
-  }, [sound])
+  }, [sound, time])
 
   return (
     <div className={style.component}>
       <h2 style={{ marginTop: 0 }}>Playing Now</h2>
       <img className={style.musicCover} src={cover} />
-      <div>
-        <h3 className={style.title}>MercyMe</h3>
-        <p className={style.subTitle}>You're Beautiful</p>
-      </div>
-      <div>
-        <button className={style.playButton}>
-          <IconContext.Provider value={{ size: '3em', color: '#27AE60' }}>
-            <BiSkipPrevious />
-          </IconContext.Provider>
-        </button>
-        {!isPlaying ? (
-          <button className={style.playButton} onClick={playingButton}>
-            <IconContext.Provider value={{ size: '3em', color: '#27AE60' }}>
-              <AiFillPlayCircle />
-            </IconContext.Provider>
-          </button>
-        ) : (
-          <button className={style.playButton} onClick={playingButton}>
-            <IconContext.Provider value={{ size: '3em', color: '#27AE60' }}>
-              <AiFillPauseCircle />
-            </IconContext.Provider>
-          </button>
-        )}
-        <button className={style.playButton}>
-          <IconContext.Provider value={{ size: '3em', color: '#27AE60' }}>
-            <BiSkipNext />
-          </IconContext.Provider>
-        </button>
+      <div
+        style={{
+          position: 'relative',
+        }}
+      >
+        <div>
+          <div>
+            <h3 className={style.title}>MercyMe</h3>
+            <p className={style.subTitle}>You're Beautiful</p>
+          </div>
+          <div>
+            <button className={style.playButton}>
+              <IconContext.Provider value={{ size: '3em', color: '#27AE60' }}>
+                <BiSkipPrevious />
+              </IconContext.Provider>
+            </button>
+            {!isPlaying ? (
+              <button className={style.playButton} onClick={playingButton}>
+                <IconContext.Provider value={{ size: '3em', color: '#27AE60' }}>
+                  <AiFillPlayCircle />
+                </IconContext.Provider>
+              </button>
+            ) : (
+              <button className={style.playButton} onClick={playingButton}>
+                <IconContext.Provider value={{ size: '3em', color: '#27AE60' }}>
+                  <AiFillPauseCircle />
+                </IconContext.Provider>
+              </button>
+            )}
+            <button className={style.playButton}>
+              <IconContext.Provider value={{ size: '3em', color: '#27AE60' }}>
+                <BiSkipNext />
+              </IconContext.Provider>
+            </button>
+          </div>
+        </div>
+        <input
+          data-orient='vertical'
+          type='range'
+          min={0}
+          max={100}
+          defaultValue={DEFAULT_VALUE}
+          // value={sound ? sound.volume() * 100 : DEFAULT_VALUE}
+          className={style.volume}
+          onChange={e => sound?.volume(Number(e.target.value) / 100)}
+        />
       </div>
       <div className={style.timelineContainer}>
         <div className={style.time}>
@@ -113,7 +140,7 @@ export const PlayerPage = () => {
           defaultValue='0'
           value={seconds}
           className={style.timeline}
-          onChange={e => sound.seek([e.target.value])}
+          onChange={e => sound?.seek(Number(e.target.value))}
         />
       </div>
     </div>
